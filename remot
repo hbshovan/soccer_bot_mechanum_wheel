@@ -1,0 +1,70 @@
+#include <SPI.h>  
+#include "RF24.h"
+
+RF24 myRadio (8, 7);
+byte addresses[][6] = {"0"};
+
+struct package
+{
+  int lx=1;
+  int ly=1;
+  int lbtn;
+  int rx=1;
+  int ry=1;
+  int rbtn;
+};
+
+
+typedef struct package Package;
+Package data;
+
+
+const int LX_PIN = A0;
+const int LY_PIN = A1;
+const int LBTN = A2;
+const int RX_PIN = A3;
+const int RY_PIN = A4;
+const int RBTN = A5;
+
+void setup()
+{
+  pinMode(LX_PIN, INPUT);
+  pinMode(LY_PIN, INPUT);
+  pinMode(LBTN, INPUT);
+  pinMode(LBTN, INPUT_PULLUP);  // Use internal pull-up
+  pinMode(RX_PIN, INPUT);
+  pinMode(RY_PIN, INPUT);
+  pinMode(RBTN, INPUT);
+  pinMode(RBTN, INPUT_PULLUP);  // Use internal pull-up
+  Serial.begin(115200);
+  delay(1000);
+  myRadio.begin();  
+  myRadio.setChannel(115); 
+  myRadio.setPALevel(RF24_PA_MAX);
+  myRadio.setDataRate( RF24_250KBPS ) ; 
+  myRadio.openWritingPipe( addresses[0]);
+  delay(1000);
+}
+
+void loop()
+{
+  data.lx = analogRead(LX_PIN);
+  data.ly = analogRead(LY_PIN);
+  data.lbtn = digitalRead(LBTN);
+  data.rx = analogRead(RX_PIN);
+  data.ry = analogRead(RY_PIN);
+  data.rbtn = digitalRead(RBTN);
+  myRadio.write(&data, sizeof(data)); 
+
+  Serial.print("\nPackageLX:");
+  Serial.print(data.lx);
+  Serial.print("\nPackageLY:");
+  Serial.println(data.ly);
+  Serial.println(data.lbtn);
+  Serial.print("\nPackageRX:");
+  Serial.print(data.rx);
+  Serial.print("\nPackageRY:");
+  Serial.println(data.ry);
+  Serial.println(data.rbtn);
+
+}
