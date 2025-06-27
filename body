@@ -1,0 +1,217 @@
+#include <SPI.h>  
+#include "RF24.h" 
+
+RF24 myRadio (8, 7); 
+struct package
+{
+  int lx=1;
+  int ly=1;
+  int lbtn;
+  int rx=1;
+  int ry=1;
+  int rbtn;
+};
+
+byte addresses[][6] = {"0"}; 
+
+typedef struct package Package;
+Package data;
+
+// Motor FL connections
+int enA = 10;
+int in1 = A3;
+int in2 = A2;
+
+// Motor FR connections
+int enB = 9;
+int in3 = A0;
+int in4 = A1;
+
+// Motor BL connections
+int enC = 6;
+int in5 = A4;
+int in6 = A5;
+
+// Motor BR connections
+int enD = 5;
+int in7 = 3;
+int in8 = 2;
+
+void setup() {
+  Serial.begin(115200);
+	pinMode(enA, OUTPUT);
+	pinMode(enB, OUTPUT);
+	pinMode(in1, OUTPUT);
+	pinMode(in2, OUTPUT);
+	pinMode(in3, OUTPUT);
+	pinMode(in4, OUTPUT);
+
+	pinMode(enC, OUTPUT);
+	pinMode(enD, OUTPUT);
+	pinMode(in5, OUTPUT);
+	pinMode(in6, OUTPUT);
+	pinMode(in7, OUTPUT);
+	pinMode(in8, OUTPUT);
+
+	digitalWrite(in1, LOW);
+	digitalWrite(in2, LOW);
+	digitalWrite(in3, LOW);
+	digitalWrite(in4, LOW);
+	digitalWrite(in5, LOW);
+	digitalWrite(in6, LOW);
+	digitalWrite(in7, LOW);
+	digitalWrite(in8, LOW);
+
+
+  myRadio.begin(); 
+  myRadio.setChannel(115); 
+  myRadio.setPALevel(RF24_PA_MAX);
+  myRadio.setDataRate( RF24_250KBPS ) ; 
+  myRadio.openReadingPipe(1, addresses[0]);
+  myRadio.startListening();
+}
+
+void loop() {
+  if (myRadio.available()) {
+    while (myRadio.available()) {
+      myRadio.read(&data, sizeof(data));
+    }
+
+    Serial.print("\nLX: "); Serial.print(data.lx);
+    Serial.print(" | LY: "); Serial.print(data.ly);
+    Serial.print("\nRX: "); Serial.print(data.rx);
+    Serial.print(" | RY: "); Serial.println(data.ry);
+    Serial.println(data.lbtn);
+    Serial.print(data.rbtn);
+
+    int pwmX = 0, pwmY = 0, pwmR;
+
+        if (data.lx > 480) {
+            brotation(map(data.lx, 480, 900, 0, 100));
+        } else if (data.lx < 400) {
+            frotation(map(data.lx, 399, 0, 0, 90));
+        } else if (data.ly > 480) {
+            frotation(map(data.ly, 480, 900, 0, 255));
+        } else if (data.ly < 400) {
+            brotation(map(data.ly, 399, 0, 0, 255));
+        } else {
+            if (data.ry > 480) {
+                backward(map(data.ry, 480, 900, 0, 255));
+            } else if (data.ry < 400) {
+                forward(map(data.ry, 0, 399, 255, 0));
+            } else if (data.rx > 480) {
+                right(map(data.rx, 480, 900, 0, 255));
+            } else if (data.rx < 400) {
+                left(map(data.rx, 0, 399, 255, 0));
+            } else {
+                stopMotors();
+            }
+        }
+
+    
+  }else{
+    stopMotors();
+  }
+}
+
+
+void stopMotors() {
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, LOW);
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, LOW);
+  digitalWrite(in5, LOW);
+  digitalWrite(in6, LOW);
+  digitalWrite(in7, LOW);
+  digitalWrite(in8, LOW);
+}
+
+void forward(int speed) {
+  analogWrite(enA, speed);
+  analogWrite(enB, speed);
+	analogWrite(enC, speed);
+  analogWrite(enD, speed);
+  digitalWrite(in1, LOW);
+	digitalWrite(in2, HIGH);
+  digitalWrite(in3, LOW);
+	digitalWrite(in4, HIGH);
+  digitalWrite(in5, LOW);
+	digitalWrite(in6, HIGH);
+  digitalWrite(in7, LOW);
+	digitalWrite(in8, HIGH);
+}
+
+void backward(int speed) {
+  analogWrite(enA, speed);
+  analogWrite(enB, speed);
+	analogWrite(enC, speed);
+  analogWrite(enD, speed);
+  digitalWrite(in1, HIGH);
+	digitalWrite(in2, LOW);
+  digitalWrite(in3, HIGH);
+	digitalWrite(in4, LOW);
+  digitalWrite(in5, HIGH);
+	digitalWrite(in6, LOW);
+  digitalWrite(in7, HIGH);
+	digitalWrite(in8, LOW);
+}
+
+void left(int speed) {
+  analogWrite(enA, speed);
+  analogWrite(enB, speed);
+	analogWrite(enC, speed);
+  analogWrite(enD, speed);
+  digitalWrite(in1, HIGH);
+	digitalWrite(in2, LOW);
+  digitalWrite(in3, LOW);
+	digitalWrite(in4, HIGH);
+  digitalWrite(in5, LOW);
+	digitalWrite(in6, HIGH);
+  digitalWrite(in7, HIGH);
+	digitalWrite(in8, LOW);
+}
+
+void right(int speed) {
+  analogWrite(enA, speed);
+  analogWrite(enB, speed);
+	analogWrite(enC, speed);
+  analogWrite(enD, speed);
+  digitalWrite(in1, LOW);
+	digitalWrite(in2, HIGH);
+  digitalWrite(in3, HIGH);
+	digitalWrite(in4, LOW);
+  digitalWrite(in5, HIGH);
+	digitalWrite(in6, LOW);
+  digitalWrite(in7, LOW);
+	digitalWrite(in8, HIGH);
+}
+
+void frotation(int speed){
+  analogWrite(enA, speed);
+  analogWrite(enB, speed);
+	analogWrite(enC, speed);
+  analogWrite(enD, speed);
+  digitalWrite(in1, LOW);
+	digitalWrite(in2, HIGH);
+  digitalWrite(in3, HIGH);
+	digitalWrite(in4, LOW);
+  digitalWrite(in5, LOW);
+	digitalWrite(in6, HIGH);
+  digitalWrite(in7, HIGH);
+	digitalWrite(in8, LOW);
+}
+
+void brotation(int speed){
+  analogWrite(enA, speed);
+  analogWrite(enB, speed);
+	analogWrite(enC, speed);
+  analogWrite(enD, speed);
+  digitalWrite(in1, HIGH);
+	digitalWrite(in2, LOW);
+  digitalWrite(in3, LOW);
+	digitalWrite(in4, HIGH);
+  digitalWrite(in5, HIGH);
+	digitalWrite(in6, LOW);
+  digitalWrite(in7, LOW);
+	digitalWrite(in8, HIGH);
+}
